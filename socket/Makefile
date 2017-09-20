@@ -1,5 +1,5 @@
 all: server client
-objects = server.cpp SocketThread.h
+objects = SocketThread.h server.cpp 
 
 server : $(objects)
 	# g++ -o server $(objects)
