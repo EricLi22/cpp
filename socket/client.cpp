@@ -11,7 +11,7 @@
 int main(int argc,char **argv)
 {
         //连接的地址
-        char *servInetAddr = "127.0.0.1";
+        const char *servInetAddr = "127.0.0.1";
         int socketfd;
         struct sockaddr_in sockaddr;
         char recvline[MAXLINE], sendline[MAXLINE];
@@ -32,7 +32,7 @@ int main(int argc,char **argv)
         inet_pton(AF_INET,servInetAddr,&sockaddr.sin_addr);
         if((connect(socketfd,(struct sockaddr*)&sockaddr,sizeof(sockaddr))) < 0 )
         {
-                printf("connect error %s errno: %d\n",strerror(errno),errno);
+                printf("connect error :[%s] errno: %d\n",strerror(errno),errno);
                 exit(0);
         }
         printf("send message to server\n");
@@ -45,10 +45,9 @@ int main(int argc,char **argv)
                 if(cmp==0) {
                         break;
                 }
-                printf("cmp: %d\n",cmp );
                 if((send(socketfd,sendline,strlen(sendline),0)) < 0)
                 {
-                        printf("send mes error: %s errno : %d",strerror(errno),errno);
+                        printf("send mes error: [%s] errno : %d",strerror(errno),errno);
                         exit(0);
                 }
                 memset(sendline,0,sizeof(sendline));
