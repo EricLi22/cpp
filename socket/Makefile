@@ -16,4 +16,4 @@ xclient : xclient.cpp XTcp.h XTcp.cpp
 
 .PHONY : clean
 clean :
-	-rm  server client main
+	-rm  server client main xclient
