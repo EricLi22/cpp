@@ -73,9 +73,9 @@ XTcp* XTcp::acceptClient(){
         XTcp* xTcpClient=new XTcp;
         xTcpClient->setSock(connfd);
         //开启线程接受数据
-        XThread* st=new XThread(xTcpClient);
-        thread t(&XThread::run,st);
-        t.detach();
+        // XThread* st=new XThread(xTcpClient);
+        // thread t(&XThread::run,st);
+        // t.detach();
         return xTcpClient;
 }
 
@@ -173,7 +173,7 @@ int XTcp::receive(char *buf,int len){
 /**
  * 发送数据
  */
-int XTcp::sendData(char *buf,int len){
+int XTcp::sendData(const char *buf,int len){
         if(sock<0) {
                 cout<<"socket is invalid"<<endl;
                 return -1;
