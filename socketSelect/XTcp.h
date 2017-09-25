@@ -1,3 +1,5 @@
+#ifndef XTCP_H
+#define XTCP_H
 #include <iostream>
 using namespace std;
 
@@ -14,8 +16,10 @@ public:
   int listenSocket();
   int receive(char *buf,int len);
   int sendData(char *buf,int len);
-  int connectServer(int port);
+  bool connectServer(int port);
   XTcp* acceptClient();
   int closeSocket();
+  bool SetBlock(bool isblock);
   ~XTcp();
 };
+#endif

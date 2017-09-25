@@ -1,4 +1,7 @@
+#ifndef XTHREAD_H
+#define XTHREAD_H
 #include <iostream>
+#include "XTcp.h"
 using namespace std;
 class XThread {
 private:
@@ -26,3 +29,4 @@ void run(){
         sock->closeSocket();
 }
 };
+#endif

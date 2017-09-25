@@ -1,3 +1,5 @@
+#ifndef SOCKET_THREAD_H
+#define SOCKET_THREAD_H
 #include <iostream>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -30,3 +32,4 @@ public:
         cout<<this->sock<<" closed"<<endl;
     }
 };
+#endif

@@ -12,6 +12,11 @@
 //c++ 11标准线程
 #include <thread>
 #include "XThread.h"
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/time.h>
+#include <sys/select.h>
+#include <sys/types.h>
 XTcp::XTcp(){
         sock=-1;
 }
@@ -42,8 +47,8 @@ int XTcp::bindPort(unsigned short port){
 }
 
 /**
-* 开始监听
-*/
+ * 开始监听
+ */
 int XTcp::listenSocket(){
         listen(sock,10);
         return 0;
@@ -74,7 +79,7 @@ XTcp* XTcp::acceptClient(){
         return xTcpClient;
 }
 
-int XTcp::connectServer(int port){
+bool XTcp::connectServer(int port){
         const char * serverIp="127.0.0.1";
         sockaddr_in sockaddr;
         memset(&sockaddr,0,sizeof(sockaddr));
@@ -82,28 +87,73 @@ int XTcp::connectServer(int port){
         sockaddr.sin_port = htons(port);
         //转换ip地址
         inet_pton(AF_INET,serverIp,&sockaddr.sin_addr);
-        if((connect(sock,(struct sockaddr*)&sockaddr,sizeof(sockaddr))) < 0 )
+        int ss=SetBlock(false);
+        fd_set set;
+        cout<<"start connect "<<sock<<endl;
+        //!=0代表未连接成功
+        if((connect(sock,(struct sockaddr*)&sockaddr,sizeof(sockaddr))) != 0 )
         {
                 printf("connect error :[%s] errno: %d\n",strerror(errno),errno);
-                exit(0);
-        }
-        cout<<"send msg to server:"<<endl;
-        char buf[1024];
-        while (true) {
-                /* code */
-                fgets(buf,1024,stdin);
-                if(strcmp(buf,"exit\n")==0) {
-                        //输入exit后退出
-                        break;
+                cout<<"=>select"<<endl;
+                FD_ZERO(&set);
+                FD_SET(sock,&set);
+                timeval tm;
+                tm.tv_sec = 3;
+                tm.tv_usec = 0;
+                int res=select(sock+1,NULL,&set,NULL,&tm);
+                cout<<"<=select res: "<<res<<endl;
+                //select返回0,则表示建立连接超时;我们返回超时错误给用户,同时关闭连接,以防止三路握手操作继续进行下去;
+                //On error, -1 is returned
+                if( res<= 0)
+                {
+                        printf("connect timeout or error!\n");
+                        return false;
                 }
-                int size=sendData(buf,sizeof(buf));
-                //写数据是发生异常
-                if(size<=0) {
-                        break;
+                //测试指定的文件描述符是否在该集合中
+                if ( !FD_ISSET( sock, &set ) )
+                {
+                        printf( "no events on sockfd found\n" );
+                        return false;
+                }
+                int error = 0;
+                socklen_t length = sizeof( error );
+                //获取任意类型、任意状态套接口的选项当前值
+                if( getsockopt( sock, SOL_SOCKET, SO_ERROR, &error, &length ) < 0 )
+                {
+                        printf( "get socket option failed\n" );
+                        return false;
+                }
+                if( error != 0 )
+                {
+                        printf( "connection failed after select with the error:[%s] errno %d \n",strerror(error), error );
+                        return false;
                 }
         }
-        //关闭客户端socket
-        closeSocket();
+        cout<<"connect success"<<endl;
+        SetBlock(true);
+        return true;
+}
+
+bool XTcp::SetBlock(bool isblock)
+{
+        if(sock<=0) return false;
+        //F_GETFL 取得文件描述符状态
+        int flags = fcntl(sock,F_GETFL,0);
+        //如果出错，所有命令都返回－1，如果成功则返回某个其他值
+        if(flags<0)
+                return false;
+        if(isblock)
+        {
+                //设置阻塞模式
+                flags = flags&~O_NONBLOCK;
+        }
+        else
+        {
+                flags = flags|O_NONBLOCK;
+        }
+        if(fcntl(sock,F_SETFL,flags)!=0)
+                return false;
+        return true;
 }
 
 /*
@@ -115,8 +165,8 @@ int XTcp::receive(char *buf,int len){
 }
 
 /**
-* 发送数据
-*/
+ * 发送数据
+ */
 int XTcp::sendData(char *buf,int len){
         if(sock<0) {
                 cout<<"socket is invalid"<<endl;

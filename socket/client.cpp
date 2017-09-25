@@ -16,20 +16,19 @@ int main(int argc,char **argv)
         struct sockaddr_in sockaddr;
         char recvline[MAXLINE], sendline[MAXLINE];
         int n;
-
-        if(argc != 2)
+        unsigned short port=8888;
+        if(argc >= 2)
         {
-                printf("client <ipaddress> \n");
-                exit(0);
+                //端口号由外部传入
+                port=atoi(argv[1]);
         }
-
         socketfd = socket(AF_INET,SOCK_STREAM,0);
         memset(&sockaddr,0,sizeof(sockaddr));
         sockaddr.sin_family = AF_INET;
-        //端口号由外部传入
-        int port=atoi(argv[1]);
         sockaddr.sin_port = htons(port);
+        //主机Ip=>网络Ip
         inet_pton(AF_INET,servInetAddr,&sockaddr.sin_addr);
+        //连接服务端
         if((connect(socketfd,(struct sockaddr*)&sockaddr,sizeof(sockaddr))) < 0 )
         {
                 printf("connect error :[%s] errno: %d\n",strerror(errno),errno);
@@ -40,11 +39,12 @@ int main(int argc,char **argv)
         while(true) {
                 printf("input your mssage\n");
                 fgets(sendline,1024,stdin);
-                // gets(sendline);
+                //判断输入，如果是exit则退出并关闭连接
                 int cmp=strcmp(sendline,"exit\n");
                 if(cmp==0) {
                         break;
                 }
+                //发送数据。
                 if((send(socketfd,sendline,strlen(sendline),0)) < 0)
                 {
                         printf("send mes error: [%s] errno : %d",strerror(errno),errno);
