@@ -11,7 +11,6 @@
 #include <arpa/inet.h>
 //c++ 11标准线程
 #include <thread>
-#include "XThread.h"
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/time.h>
@@ -61,21 +60,17 @@ XTcp* XTcp::acceptClient(){
         int connfd;
         struct sockaddr_in sockaddrClient;
         int clientl=sizeof(sockaddrClient);
-        printf("wait for client connect\n" );
-        // if((connfd = accept(sock,NULL,NULL))==-1) {
         if((connfd = accept(sock,(struct sockaddr*)&sockaddrClient,(socklen_t *)&clientl))==-1) {
-                printf("accpet socket error: %s errno :%d\n",strerror(errno),errno);
+                printf("accpet socket error: [%s] errno :%d\n",strerror(errno),errno);
+                return NULL;
         }
+        cout<<"connfd "<<connfd<<endl;
         char cilentIp[20];
         unsigned short port= ntohs(sockaddrClient.sin_port);
         const char *ip=inet_ntop(AF_INET,(void *)&sockaddrClient.sin_addr,cilentIp,16);
         printf("client=> %s:%d\n",cilentIp,port);
         XTcp* xTcpClient=new XTcp;
         xTcpClient->setSock(connfd);
-        //开启线程接受数据
-        // XThread* st=new XThread(xTcpClient);
-        // thread t(&XThread::run,st);
-        // t.detach();
         return xTcpClient;
 }
 

@@ -27,8 +27,8 @@ void HttpServer::run(){
         ev.events=EPOLLIN|EPOLLET;
         epoll_ctl(epfd,EPOLL_CTL_ADD,server->getSock(),&ev);
         struct epoll_event event[20];
+        //设置为非阻塞
         server->SetBlock(false);
-
         while (!exit) {
                 int count = epoll_wait(epfd,event,20,500);
                 if(count <=0) continue;
@@ -40,8 +40,8 @@ void HttpServer::run(){
                                 for(;; )
                                 {
                                         XTcp* client = server->acceptClient();
-                                        if(client->getSock()<=0) break;
-
+                                        if(client->getSock()==NULL)
+                                                break;
                                         //新注册客户端事件
                                         ev.data.fd = client->getSock();
                                         ev.events=EPOLLIN|EPOLLET;
