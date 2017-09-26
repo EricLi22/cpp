@@ -2,8 +2,8 @@
 #include "string.h"
 #include "thread"
 
-HttpClient::HttpClient(){
-        client=NULL;
+HttpClient::HttpClient(XTcp* client){
+        this->client=client;
 }
 HttpClient::~HttpClient(){
         if(client!=NULL) {
@@ -14,20 +14,30 @@ HttpClient::~HttpClient(){
 }
 
 void HttpClient::run(){
-        const char *msg = "HTTP/1.1 200 OK\r\nContent-Length: 1\r\n\r\nX";
-        int size = strlen(msg);
 
+        //接受输入
         char buf[1024]={0};
         int length=client->receive(buf,sizeof(buf)-1);
         if(length<=0) {
                 client->closeSocket();
         }else{
                 cout<<">>> "<<buf<<endl;
-                client->sendData(msg,strlen(msg));
+                string firstLine="HTTP/1.1 200 OK\r\n";
+                string heads="Content-Length: ";
+                string content="Success!";
+                heads+=content.size();
+                heads+="\r\n\r\n";
+
+                string res=firstLine;
+                res+=heads;
+                res+=content;
+                cout<<res.c_str()<<endl;
+                int size = strlen(res.c_str());
+                client->sendData(res.c_str(),size);
                 client->closeSocket();
         }
 }
 bool HttpClient::process(){
-    thread t(&HttpClient::run,this);
-    t.detach();
+        thread t(&HttpClient::run,this);
+        t.detach();
 }

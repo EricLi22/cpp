@@ -2,6 +2,7 @@
 #include "thread"
 #include <sys/epoll.h>
 #include <string.h>
+#include "HttpClient.h"
 
 HttpServer::HttpServer(){
         this->server=NULL;
@@ -18,7 +19,7 @@ HttpServer::~HttpServer(){
 void HttpServer::run(){
         cout<<"run ..."<<endl;
         this->server->listenSocket();
-        int epfd = epoll_create(256);
+        this->epfd = epoll_create(256);
         //注册epoll事件
         struct epoll_event ev;
         ev.data.fd = server->getSock();
@@ -28,10 +29,6 @@ void HttpServer::run(){
         struct epoll_event event[20];
         server->SetBlock(false);
 
-
-        char buf[1024] = {0};
-        const char *msg = "HTTP/1.1 200 OK\r\nContent-Length: 1\r\n\r\nX";
-        int size = strlen(msg);
         while (!exit) {
                 int count = epoll_wait(epfd,event,20,500);
                 if(count <=0) continue;
@@ -55,13 +52,12 @@ void HttpServer::run(){
                         else
                         {
                                 cout<<"<<= data event"<<endl;
-                                XTcp client;
-                                client.setSock(event[i].data.fd);
-                                client.receive(buf,1024);
-                                client.sendData(msg,size);
+                                XTcp *xtcp=new XTcp;
+                                xtcp->setSock(event[i].data.fd);
+                                HttpClient* client=new HttpClient(xtcp);
+                                client->process();
                                 //客户端处理完毕，清理事件
-                                epoll_ctl(epfd,EPOLL_CTL_DEL,client.getSock(),&ev);
-                                client.closeSocket();
+                                epoll_ctl(epfd,EPOLL_CTL_DEL,xtcp->getSock(),&ev);
                         }
                 }
         }

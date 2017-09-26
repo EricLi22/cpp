@@ -10,7 +10,7 @@ private:
 XTcp* client;
 void run();
 public:
-HttpClient();
+HttpClient(XTcp* client);
 ~HttpClient();
 bool process();
 };

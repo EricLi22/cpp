@@ -6,7 +6,9 @@ using namespace std;
 
 class HttpServer {
 private:
-  bool exit;
+bool exit;
+//epoll 创建后的文件描述符
+int epfd;
 XTcp *server;
 void run();
 public:
