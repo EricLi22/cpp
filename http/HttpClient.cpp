@@ -5,6 +5,7 @@
 #include "Response.h"
 #include <stdlib.h>
 #include <boost/regex.hpp>
+#include "Request.h"
 
 HttpClient::HttpClient(XTcp* client){
         this->client=client;
@@ -25,34 +26,34 @@ void HttpClient::run(){
                 client->closeSocket();
         }else{
                 cout<<"\n\n>>> "<<buf<<endl;
+                Request req;
                 Response resp;
-                string souStr=buf;
-                boost::regex reg("^(\\w+) /(\\w*([.]\\w+)?) HTTP/1");
-                boost::smatch sm;
-                regex_search(souStr,sm,reg);
-                if(sm.size()==0) {
+                req.setBody(string(buf));
+                if(!req.parse()) {
+                        cout<<"parse failed"<<endl;
                         resp.setCode(404);
                         resp.setMsg("protocol first line error");
                         string headsStr=resp.getData();
                         client->sendData(headsStr.c_str(),headsStr.size());
+
                 }else{
-                        cout<<"Regex =>"<<sm[1]<<"|"<<sm[2]<<"|"<<sm[3]<<endl;
-                        string path="/code/http/www/";
-                        if(sm[2].str().empty()) {
-                                path.append("index.html");
+                        cout<<req.getPath()<<endl;
+                        string path="/code/http/www";
+                        if(req.getPath()=="/") {
+                                path.append("/index.html");
                         }else{
-                                path.append(sm[2].str());
+                                path.append(req.getPath());
                         }
                         cout<<"Path =>"<<path<<endl;
                         //解析Php文件
-                        if(sm[3]==".php"){
-                            string cmd="php-cgi ";
-                            string resFilePath;
-                            resFilePath.append(path).append(".html");
-                            cmd.append(path).append(" > ").append(resFilePath);
-                            cout<<cmd<<endl;
-                            system(cmd.c_str());
-                            path=resFilePath;
+                        if(req.getPostfix()==".php") {
+                                string cmd="php-cgi ";
+                                string resFilePath;
+                                resFilePath.append(path).append(".html");
+                                cmd.append(path).append(" > ").append(resFilePath);
+                                cout<<cmd<<endl;
+                                system(cmd.c_str());
+                                path=resFilePath;
                         }
                         //读写文件
                         int fileSize=0;
@@ -67,7 +68,7 @@ void HttpClient::run(){
                         }
                         resp.setContentLength(fileSize);
                         // if(sm[3].str().empty()) {
-                                resp.addHead("Content-Type","text/html");
+                        resp.addHead("Content-Type","text/html");
                         // }else{
                         //         resp.addHead("Content-Type","image/jpeg");
                         // }
