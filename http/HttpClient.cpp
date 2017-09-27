@@ -44,6 +44,16 @@ void HttpClient::run(){
                                 path.append(sm[2].str());
                         }
                         cout<<"Path =>"<<path<<endl;
+                        //解析Php文件
+                        if(sm[3]==".php"){
+                            string cmd="php-cgi ";
+                            string resFilePath;
+                            resFilePath.append(path).append(".html");
+                            cmd.append(path).append(" > ").append(resFilePath);
+                            cout<<cmd<<endl;
+                            system(cmd.c_str());
+                            path=resFilePath;
+                        }
                         //读写文件
                         int fileSize=0;
                         FILE *file=fopen(path.c_str(),"r");
