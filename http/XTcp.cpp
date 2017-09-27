@@ -177,9 +177,9 @@ int XTcp::sendData(const char *buf,int len){
                 return 0;
         }
         int totalSize=0;
-        while (totalSize<len) {
+        while (totalSize!=len) {
                 /* code */
-                int size=send(sock,buf+totalSize,strlen(buf)-totalSize,0);
+                int size=send(sock,buf+totalSize,len-totalSize,0);
                 if(size<=0)
                         break;
                 totalSize+=size;

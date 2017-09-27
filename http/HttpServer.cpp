@@ -3,6 +3,8 @@
 #include <sys/epoll.h>
 #include <string.h>
 #include "HttpClient.h"
+#include <stdlib.h>
+#include <stdio.h>
 
 HttpServer::HttpServer(){
         this->server=NULL;
@@ -37,11 +39,11 @@ void HttpServer::run(){
                         if(event[i].data.fd == server->getSock())
                         {
                                 cout<<"<<= connect event"<<endl;
-                                for(;; )
+                                while(true)
                                 {
                                         XTcp* client = server->acceptClient();
-                                        if(client->getSock()==NULL)
-                                                break;
+                                        if(client==NULL)
+                                            break;
                                         //新注册客户端事件
                                         ev.data.fd = client->getSock();
                                         ev.events=EPOLLIN|EPOLLET;

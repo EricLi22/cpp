@@ -19,7 +19,6 @@ HttpClient::~HttpClient(){
 
 void HttpClient::run(){
         char buf[1024]={0};
-        cout<<"run"<<endl;
         //读取客户度发来的数据
         int length=client->receive(buf,sizeof(buf)-1);
         if(length<=0) {
@@ -37,16 +36,48 @@ void HttpClient::run(){
                         string headsStr=resp.getData();
                         client->sendData(headsStr.c_str(),headsStr.size());
                 }else{
-                        string content="success";
-                        char lenBuf[10]={0};
-                        sprintf(lenBuf,"%d", content.size());
-                        resp.addHead(string("Content-Length: "),string(lenBuf));
-                        cout<<lenBuf<<endl;
+                        cout<<"Regex =>"<<sm[1]<<"|"<<sm[2]<<"|"<<sm[3]<<endl;
+                        string path="/code/http/www/";
+                        if(sm[2].str().empty()) {
+                                path.append("index.html");
+                        }else{
+                                path.append(sm[2].str());
+                        }
+                        cout<<"Path =>"<<path<<endl;
+                        //读写文件
+                        int fileSize=0;
+                        FILE *file=fopen(path.c_str(),"r");
+                        if(file!=NULL) {
+                                fseek(file,0L,SEEK_END);
+                                //获取文件大小
+                                fileSize=ftell(file);
+                                fseek(file,0L,SEEK_SET);
+                        }else{
+                                cout<<"file read error"<<endl;
+                        }
+                        resp.setContentLength(fileSize);
+                        // if(sm[3].str().empty()) {
+                                resp.addHead("Content-Type","text/html");
+                        // }else{
+                        //         resp.addHead("Content-Type","image/jpeg");
+                        // }
+                        resp.addHead("Server","eric http");
                         string headsStr=resp.getData();
-                        cout<<headsStr.c_str();
-                        cout<<content.c_str()<<endl;
+                        cout<<"<<< "<<headsStr.c_str();
                         client->sendData(headsStr.c_str(),headsStr.size());
-                        client->sendData(content.c_str(),content.size());
+                        if(file!=NULL) {
+                                char dataBuf[1024*100]={0};
+                                while(true) {
+                                        int len= fread(dataBuf,1,sizeof(dataBuf),file);
+                                        if(len<=0) {
+                                                break;
+                                        }
+                                        cout<<"===>send Data "<<len<<endl;
+                                        client->sendData(dataBuf,len);
+                                }
+
+                                fclose(file);
+                        }
                 }
                 client->closeSocket();
         }
