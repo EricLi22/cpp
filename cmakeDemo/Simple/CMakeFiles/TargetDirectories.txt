@@ -1,0 +1,2 @@
+/code/cmakeDemo/Simple/math/CMakeFiles/MathFunctions.dir
+/code/cmakeDemo/Simple/CMakeFiles/main.dir

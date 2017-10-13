@@ -1,0 +1,4 @@
+/code/cmakeDemo/Simple/_CPack_Packages/Linux/TZ/Calc-1.0.1-Linux/bin/main
+/code/cmakeDemo/Simple/_CPack_Packages/Linux/TZ/Calc-1.0.1-Linux/include/config.h
+/code/cmakeDemo/Simple/_CPack_Packages/Linux/TZ/Calc-1.0.1-Linux/bin/libMathFunctions.a
+/code/cmakeDemo/Simple/_CPack_Packages/Linux/TZ/Calc-1.0.1-Linux/include/Math.h
