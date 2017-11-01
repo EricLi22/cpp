@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <boost/regex.hpp>
 #include "Request.h"
+#include "http_parser.h"
 
 HttpClient::HttpClient(XTcp* client){
         this->client=client;
@@ -18,6 +19,46 @@ HttpClient::~HttpClient(){
         }
 }
 
+int on_url(http_parser* _, const char* at, size_t length) {
+        (void)_;
+        printf("Url: %.*s\n", (int)length, at);
+        return 0;
+}
+int on_header_field(http_parser* _, const char* at, size_t length) {
+        (void)_;
+        printf("Header field: %.*s\n", (int)length, at);
+        return 0;
+}
+
+int on_header_value(http_parser* _, const char* at, size_t length) {
+        (void)_;
+        printf("Header value: %.*s\n", (int)length, at);
+        return 0;
+}
+int on_message_begin(http_parser* _) {
+        (void)_;
+        printf("\n***MESSAGE BEGIN***\n\n");
+        return 0;
+}
+
+int on_headers_complete(http_parser* _) {
+        (void)_;
+        printf("\n***HEADERS COMPLETE***\n\n");
+        return 0;
+}
+
+int on_message_complete(http_parser* _) {
+        (void)_;
+        printf("\n***MESSAGE COMPLETE***\n\n");
+        return 0;
+}
+int on_body(http_parser* _, const char* at, size_t length) {
+        (void)_;
+        printf("Body: %.*s\n", (int)length, at);
+        return 0;
+}
+
+
 void HttpClient::run(){
         char buf[1024]={0};
         //读取客户度发来的数据
@@ -25,7 +66,32 @@ void HttpClient::run(){
         if(length<=0) {
                 client->closeSocket();
         }else{
-                cout<<"\n\n>>> "<<buf<<endl;
+
+                /***********解析请求数据************/
+                http_parser_settings settings;
+                settings.on_url = on_url;
+                settings.on_header_field = on_header_field;
+                settings.on_header_value = on_header_value;
+                settings.on_message_begin = on_message_begin;
+                settings.on_status = 0;
+                settings.on_body = on_body;
+                settings.on_headers_complete = on_headers_complete;
+                settings.on_message_complete = on_message_complete;
+
+                http_parser *parser =(http_parser * )malloc(sizeof(http_parser));
+                http_parser_init(parser, HTTP_REQUEST);
+                // parser->data = client->getSock();
+                size_t nparsed;
+                nparsed=http_parser_execute(parser, &settings, buf, length);
+                if (parser->upgrade) {
+                        /* handle new protocol */
+                        cout<<"handle new protoco"<<endl;
+                } else if (nparsed != length) {
+                        /* Handle error. Usually just close the connection. */
+                        cout<<"Handle error"<<endl;
+                }else{
+                        cout<<"Handle success !"<<endl;
+                }
                 Request req;
                 Response resp;
                 req.setBody(string(buf));
@@ -37,14 +103,12 @@ void HttpClient::run(){
                         client->sendData(headsStr.c_str(),headsStr.size());
 
                 }else{
-                        cout<<req.getPath()<<endl;
                         string path="/code/http/www";
                         if(req.getPath()=="/") {
                                 path.append("/index.html");
                         }else{
                                 path.append(req.getPath());
                         }
-                        cout<<"Path =>"<<path<<endl;
                         //解析Php文件
                         if(req.getPostfix()==".php") {
                                 string cmd="php-cgi ";
@@ -64,17 +128,12 @@ void HttpClient::run(){
                                 fileSize=ftell(file);
                                 fseek(file,0L,SEEK_SET);
                         }else{
-                                cout<<"file read error"<<endl;
+                                cout<<"file not exist"<<endl;
                         }
                         resp.setContentLength(fileSize);
-                        // if(sm[3].str().empty()) {
                         resp.addHead("Content-Type","text/html");
-                        // }else{
-                        //         resp.addHead("Content-Type","image/jpeg");
-                        // }
                         resp.addHead("Server","eric http");
                         string headsStr=resp.getData();
-                        cout<<"<<< "<<headsStr.c_str();
                         client->sendData(headsStr.c_str(),headsStr.size());
                         if(file!=NULL) {
                                 char dataBuf[1024*100]={0};
@@ -83,10 +142,8 @@ void HttpClient::run(){
                                         if(len<=0) {
                                                 break;
                                         }
-                                        cout<<"===>send Data "<<len<<endl;
                                         client->sendData(dataBuf,len);
                                 }
-
                                 fclose(file);
                         }
                 }
